@@ -6,7 +6,7 @@ Rest r;
 int scount;
 
 void setup() {
-  size(1300, 600);
+  size(800, 600);
   //noCursor();
   //player = new APMediaPlayer(this);
   //player.setMediaFile("130bpm.mp3");
@@ -15,10 +15,10 @@ void setup() {
   //player.setVolume(1.0, 1.0); 
   background(140, 180, 255);
   p = new Fish(true);
-  r = new Rest(p, 500);
+  r = new Rest(p, 120);
   smooth();
-  mouseX = 399;
-  mouseY = 300;
+  //mouseX = 399;
+  //mouseY = 300;
   scount = 300;
   frameRate(30);
 }
