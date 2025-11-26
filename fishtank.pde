@@ -36,7 +36,7 @@ void draw() {
       fill(250, 100, 100);
       textSize(48);
       if(scount%30 < 15){
-      text("¡SOBREVIVE! "+int(scount/30), 290, 100);
+      text("Survive! "+int(scount/30), 290, 100);
       }
       scount--;
       
@@ -50,10 +50,10 @@ void draw() {
     fill(250, 100, 100);
     textSize(48);
     if (r.dots.size() == 0) {
-      text("¡GANASTE!", 290, 300);
+      text("You won!", 290, 300);
     }
     else {
-      text("PERDISTE :(", 290, 300);
+      text("You lost :(", 290, 300);
     }
 
     if (mousePressed) {
@@ -67,11 +67,3 @@ void mouseClicked() {
     setup();
   }
 }
-
-/*public void onDestroy() {
- 
- super.onDestroy(); //call onDestroy on super class
- if (player!=null) { //must be checked because or else crash when return from landscape mode
- player.release(); //release the player
- }
- }*/
