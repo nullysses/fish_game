@@ -15,7 +15,6 @@ class Fish {
     prin = p;
     pos = prin?new PVector(width/2, height/2):new PVector(random(width), random(height));
     tam = prin?4:int(random(1, 10));
-    //dir = new PVector(-1, 0);
     float s = random(0, TWO_PI);
     dir = new PVector(cos(s), sin(s));
     t1 = new PVector(-1, 1);
@@ -47,11 +46,8 @@ class Fish {
     }
     arc(pos.x+dir.x*tam*0.9, pos.y+dir.y*tam*0.9, tam*2, tam*2, alpha, alpha+TWO_PI-QUARTER_PI);
 
-    float f = 0.7;
     t2.x = t1.x = -dir.y;
     t2.y = t1.y = dir.x;
-    
-
 
     t1.add(dir);
     t1.mult(-1*tam*0.9);
@@ -82,7 +78,6 @@ class Fish {
   public void move(float x, float y, int t, float acc) { 
 
 
-    //if (abs(mouseX - pos.x) > tam && abs(mouseY - pos.y) > tam) {
     if (prin) {
       dir.x = pos.x;
       dir.y = pos.y;
@@ -98,16 +93,9 @@ class Fish {
       dir.mult(n/6);
       pos.add(dir);
 
-      //pos.mult(n/6);
-
-      //dir.sub(pos);
-      //dir.mult(-1);
       dir.normalize();
     }
     else {
-      //dir.x = pos.x;
-      //dir.y = pos.y;
-
       if (t <= tam) {
         dir = new PVector(x, y);
       }
@@ -117,11 +105,9 @@ class Fish {
 
       dir.sub(pos);
 
-      float n = dir.mag();
       dir.normalize();
 
       dir.mult((acc));
-      //pos.add(dir);
       pos.x = (pos.x+dir.x)%width;
       if (pos.x <= 0) {
         pos.x = width-tam*2;
@@ -131,15 +117,7 @@ class Fish {
         pos.y = height-tam*2;
       }
 
-      //pos.mult(n/6);
-
-      //dir.sub(pos);
-      //dir.mult(-1);
       dir.normalize();
     }
-    //}
-
-    //    println("mx:"+mouseX+" "+"dx:"+dir.x+" px:"+pos.x);
-    //    println("my:"+mouseY+" "+"dy:"+dir.y+" px:"+pos.y);
   }
 }

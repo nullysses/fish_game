@@ -15,7 +15,6 @@ class Rest {
      max_cohere_angle = (PI/120);
 
     for (int i = 0; i < ars; i++) {
-      //dots.add( new PVector(random(width), random(height)));
       dots.add( new Fish(false));
     }
   }
@@ -44,7 +43,6 @@ class Rest {
       }
       else {
         for (int j = 0; j < dots.size()-1; j++) {
-          //println(i+":"+j);
 
           if (dots.get(i).pos.dist(dots.get(j).pos) < dots.get(i).tam*2) {
             if (dots.get(i).tam > dots.get(j).tam) {
@@ -81,9 +79,7 @@ class Rest {
               dots.get(i).dir = dots.get(i).turn(dots.get(i).dir, max_cohere_angle*orient);
             }      
 
-            //dots.get(i).dir = dots.get(i).turn(dots.get(i).dir, orient*(PI/120));
             if (nearest != -1) {
-              //dots.get(i).dir = dots.get(i).turn(dots.get(i).dir, PVector.angleBetween(dots.get(i).dir, dots.get(nearest).pos)/20);
             }
           }
           else {
@@ -91,8 +87,6 @@ class Rest {
           dots.get(i).move(dots.get(i).pos.x+dots.get(i).dir.x*dots.get(i).tam*2, dots.get(i).pos.y+dots.get(i).dir.y*dots.get(i).tam*2, 0, 1);
         }
 
-        //point(dots.get(i).pos.x, dots.get(i).pos.y);
-        //println(dots.get(i).x + " " +  dots.get(i).y);
       }
     }
 
