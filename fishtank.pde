@@ -16,6 +16,7 @@ void setup() {
   background(140, 180, 255);
   p = new Fish(true);
   r = new Rest(p, 120);
+  //r.gamestate = 0;
   smooth();
   //mouseX = 399;
   //mouseY = 300;
@@ -25,45 +26,55 @@ void setup() {
 
 void draw() {
   background(140, 180, 255);
-  if (!r.gameover) {
-
-    p.draw();
-    p.move(0, 0, 0, 1);
-
-    r.draw();
-
-    if (!r.smallerav) {
+  switch(r.gamestate) {
+    case 0:
       fill(250, 100, 100);
       textSize(48);
-      if(scount%30 < 15){
-      text("Survive! "+int(scount/30), 290, 100);
+      text("Click here to start!", 290, 300);
+      if (mousePressed) {
+        r.gamestate = 1;
       }
-      scount--;
-      
-      if (scount <= 0) {
-       r.gameover = true;
-       r.dots = new ArrayList(); 
-      }
-    }
-  }
-  else {
-    fill(250, 100, 100);
-    textSize(48);
-    if (r.dots.size() == 0) {
-      text("You won!", 290, 300);
-    }
-    else {
-      text("You lost :(", 290, 300);
-    }
+      break;
+    case 1:
+      p.draw();
+      p.move(0, 0, 0, 1);
 
-    if (mousePressed) {
-      setup();
-    }
+      r.draw();
+
+      if (!r.smallerav) {
+        fill(250, 100, 100);
+        textSize(48);
+        if(scount%30 < 15){
+          text("Survive! "+int(scount/30), 290, 100);
+        }
+        scount--;
+      
+        if (scount <= 0) {
+         r.gamestate = 2;
+         r.dots = new ArrayList(); 
+        }
+        }
+        break;
+     case 2:
+      fill(250, 100, 100);
+      textSize(48);
+      if (r.dots.size() == 0) {
+        text("You won!", 290, 300);
+      }
+      else {
+        text("You lost :(", 290, 300);
+      }
+
+      if (mousePressed) {
+        setup();
+      }
+      break;
+    
   }
 }
 
 void mouseClicked() {
-  if (r.gameover) {
+  if (r.gamestate == 0 || r.gamestate ==2) {
     setup();
   }
 }

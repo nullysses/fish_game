@@ -2,7 +2,7 @@ class Rest {
   ArrayList<Fish> dots;
   ArrayList<Integer> tams;
   Fish p;
-  boolean gameover;
+  int gamestate;
   boolean smallerav; 
   float max_cohere_angle;
   float max_away_angle;
@@ -10,8 +10,8 @@ class Rest {
   Rest(Fish f, int ars) {
     p = f;
     dots = new ArrayList();
-    gameover = false;
-    boolean smallerav = true;
+    gamestate = 0;
+    smallerav = true;
      max_cohere_angle = (PI/120);
 
     for (int i = 0; i < ars; i++) {
@@ -39,7 +39,7 @@ class Rest {
           p.vr++;
         }
         else {
-          gameover = true;
+          gamestate = 2;
         }
       }
       else {
@@ -101,7 +101,7 @@ class Rest {
       if (!dots.get(j).alive) {
         dots.remove(j);
         if (dots.size() == 0) {
-          gameover = true;
+          gamestate = 2;
         }
       }
       else {        
