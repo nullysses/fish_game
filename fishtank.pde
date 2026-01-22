@@ -1,25 +1,14 @@
-//import apwidgets.*;
 
-//APMediaPlayer player;
 Fish p;
 Rest r;
 int scount;
 
 void setup() {
   size(800, 600);
-  //noCursor();
-  //player = new APMediaPlayer(this);
-  //player.setMediaFile("130bpm.mp3");
-  //player.start(); //start play back
-  //player.setLooping(false); 
-  //player.setVolume(1.0, 1.0); 
   background(140, 180, 255);
   p = new Fish(true);
   r = new Rest(p, 120);
-  //r.gamestate = 0;
   smooth();
-  //mouseX = 399;
-  //mouseY = 300;
   scount = 300;
   frameRate(30);
 }
