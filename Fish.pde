@@ -9,6 +9,7 @@ class Fish {
   boolean prin;
   boolean alive;
   PVector href;
+  float finPhase;
 
   Fish(boolean p) {
     vr = 0;
@@ -22,6 +23,7 @@ class Fish {
     t3 = new PVector(1, -1);
     href = new PVector(1, 0);
     alive = true;
+    finPhase = random(TWO_PI);
   }
 
   PVector turn(PVector or, float angle) {
@@ -39,6 +41,10 @@ class Fish {
     int body = prin ? color(255, 135, 105) : color(105, 220, 135);
     int belly = prin ? color(255, 205, 175) : color(190, 255, 185);
     int fin = prin ? color(230, 90, 80) : color(65, 175, 105);
+    float flap = sin(frameCount * 0.24 + finPhase);
+    float tailFlap = flap * tam * 0.38;
+    float topFinFlap = flap * tam * 0.28;
+    float bottomFinFlap = -flap * tam * 0.24;
 
     pushMatrix();
     translate(pos.x, pos.y);
@@ -46,8 +52,8 @@ class Fish {
 
     noStroke();
     fill(fin, 190);
-    triangle(-tam*1.1, 0, -tam*2.3, -tam*1.0, -tam*2.0, tam*0.1);
-    triangle(-tam*1.1, 0, -tam*2.3, tam*1.0, -tam*2.0, -tam*0.1);
+    triangle(-tam*1.1, 0, -tam*2.3, -tam*1.0 + tailFlap, -tam*2.0, tam*0.1);
+    triangle(-tam*1.1, 0, -tam*2.3, tam*1.0 + tailFlap, -tam*2.0, -tam*0.1);
 
     fill(body);
     ellipse(0, 0, tam*3.1, tam*1.55);
@@ -56,8 +62,8 @@ class Fish {
     ellipse(tam*0.25, tam*0.3, tam*2.0, tam*0.65);
 
     fill(fin, 180);
-    triangle(-tam*0.35, -tam*0.62, tam*0.3, -tam*1.25, tam*0.75, -tam*0.45);
-    triangle(-tam*0.2, tam*0.45, tam*0.65, tam*1.0, tam*0.45, tam*0.15);
+    triangle(-tam*0.82, -tam*0.54, -tam*0.18 + topFinFlap, -tam*1.18, tam*0.28, -tam*0.38);
+    triangle(-tam*0.18, tam*0.45, tam*0.82 + bottomFinFlap, tam*1.18, tam*0.55, tam*0.08);
 
     stroke(255, 255, 255, 75);
     strokeWeight(max(1, tam*0.08));
