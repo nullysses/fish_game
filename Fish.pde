@@ -36,43 +36,46 @@ class Fish {
       tam = tam + 4;
       vr = 0;
     }
+    int body = prin ? color(255, 135, 105) : color(105, 220, 135);
+    int belly = prin ? color(255, 205, 175) : color(190, 255, 185);
+    int fin = prin ? color(230, 90, 80) : color(65, 175, 105);
+
+    pushMatrix();
+    translate(pos.x, pos.y);
+    rotate(dir.heading());
+
     noStroke();
-    int c = prin?color(255, 140, 130):color(130, 255, 140);
-    fill(c);
+    fill(fin, 190);
+    triangle(-tam*1.1, 0, -tam*2.3, -tam*1.0, -tam*2.0, tam*0.1);
+    triangle(-tam*1.1, 0, -tam*2.3, tam*1.0, -tam*2.0, -tam*0.1);
 
-    float alpha = PVector.angleBetween(href, dir);
-    if (dir.y < 0) {
-      alpha = -alpha;
-    }
-    arc(pos.x+dir.x*tam*0.9, pos.y+dir.y*tam*0.9, tam*2, tam*2, alpha, alpha+TWO_PI-QUARTER_PI);
+    fill(body);
+    ellipse(0, 0, tam*3.1, tam*1.55);
 
-    t2.x = t1.x = -dir.y;
-    t2.y = t1.y = dir.x;
+    fill(belly, 170);
+    ellipse(tam*0.25, tam*0.3, tam*2.0, tam*0.65);
 
-    t1.add(dir);
-    t1.mult(-1*tam*0.9);
-    t1.add(pos);
+    fill(fin, 180);
+    triangle(-tam*0.35, -tam*0.62, tam*0.3, -tam*1.25, tam*0.75, -tam*0.45);
+    triangle(-tam*0.2, tam*0.45, tam*0.65, tam*1.0, tam*0.45, tam*0.15);
 
-    t2.sub(dir);
-    t2.mult(tam*0.9);
-    t2.add(pos);
-    
-    t3 = turn(dir, -QUARTER_PI+QUARTER_PI/2);
-    t3.mult(tam*1.2);
-    t3.add(pos);
-    
-    triangle(pos.x, pos.y, 
-    t1.x, t1.y, 
-    t2.x, t2.y);
+    stroke(255, 255, 255, 75);
+    strokeWeight(max(1, tam*0.08));
+    line(-tam*0.7, -tam*0.35, tam*0.55, -tam*0.42);
+    line(-tam*0.85, -tam*0.1, tam*0.75, -tam*0.12);
+
+    stroke(80, 60, 55, 120);
+    strokeWeight(max(1, tam*0.07));
+    noFill();
+    arc(tam*0.75, 0, tam*0.45, tam*0.95, -HALF_PI, HALF_PI);
+
     noStroke();
     fill(255);
-    
-    ellipse(t3.x,t3.y, tam/2, tam/2);
-    stroke(0);
-    strokeWeight(2);
-    point(t3.x,t3.y);
+    ellipse(tam*1.0, -tam*0.28, tam*0.42, tam*0.42);
+    fill(25);
+    ellipse(tam*1.08, -tam*0.28, tam*0.18, tam*0.18);
 
-
+    popMatrix();
   }
 
   public void move(float x, float y, int t, float acc) { 
