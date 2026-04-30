@@ -2,12 +2,16 @@
 Fish p;
 Rest r;
 int scount;
+ArrayList<Bubble> bubbles;
+int bubbleTimer;
 
 void setup() {
   size(800, 600);
   background(140, 180, 255);
   p = new Fish(true);
   r = new Rest(p, 120);
+  bubbles = new ArrayList<Bubble>();
+  bubbleTimer = 15 * 30;
   smooth();
   scount = 300;
   frameRate(30);
@@ -25,6 +29,7 @@ void draw() {
       }
       break;
     case 1:
+      drawBubbles();
       p.draw();
       p.move(0, 0, 0, 1);
 
@@ -59,6 +64,33 @@ void draw() {
       }
       break;
     
+  }
+}
+
+void drawBubbles() {
+  bubbleTimer--;
+  if (bubbleTimer <= 0) {
+    bubbleTimer = 15 * 30;
+    if (random(1) < 0.5) {
+      addBubbleGroup();
+    }
+  }
+
+  for (int i = bubbles.size() - 1; i >= 0; i--) {
+    Bubble bubble = bubbles.get(i);
+    bubble.move();
+    bubble.draw();
+    if (bubble.offScreen()) {
+      bubbles.remove(i);
+    }
+  }
+}
+
+void addBubbleGroup() {
+  int amount = int(random(1, 6));
+  float startX = random(35, width - 35);
+  for (int i = 0; i < amount; i++) {
+    bubbles.add(new Bubble(startX + random(-16, 16), height + random(6, 38)));
   }
 }
 
