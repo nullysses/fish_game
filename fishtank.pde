@@ -1,9 +1,12 @@
 
+import processing.sound.*;
+
 Fish p;
 Rest r;
 int scount;
 ArrayList<Bubble> bubbles;
 int bubbleTimer;
+SoundEffects sounds;
 
 void setup() {
   size(800, 600);
@@ -11,7 +14,8 @@ void setup() {
   p = new Fish(true);
   r = new Rest(p, 120);
   bubbles = new ArrayList<Bubble>();
-  bubbleTimer = 15 * 30;
+  bubbleTimer = 1 * 30;
+  sounds = new SoundEffects(this);
   smooth();
   scount = 300;
   frameRate(30);
@@ -70,7 +74,7 @@ void draw() {
 void drawBubbles() {
   bubbleTimer--;
   if (bubbleTimer <= 0) {
-    bubbleTimer = 15 * 30;
+    bubbleTimer = 1 * 30;
     if (random(1) < 0.5) {
       addBubbleGroup();
     }
@@ -92,6 +96,7 @@ void addBubbleGroup() {
   for (int i = 0; i < amount; i++) {
     bubbles.add(new Bubble(startX + random(-16, 16), height + random(6, 38)));
   }
+  sounds.bloop();
 }
 
 void mouseClicked() {
