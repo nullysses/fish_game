@@ -15,7 +15,7 @@ class Fish {
     vr = 0;
     prin = p;
     pos = prin?new PVector(width/2, height/2):new PVector(random(width), random(height));
-    tam = prin?4:int(random(1, 10));
+    tam = prin?5:int(random(3, 12));
     float s = random(0, TWO_PI);
     dir = new PVector(cos(s), sin(s));
     t1 = new PVector(-1, 1);

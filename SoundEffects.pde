@@ -15,7 +15,7 @@ class SoundEffects {
   }
 
   void bloop() {
-    float baseFreq = 360;
+    float baseFreq = random(300, 400);
 
     bloopTone.freq(baseFreq);
     bloopTone.pan(random(-0.35, 0.35));
