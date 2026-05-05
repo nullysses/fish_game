@@ -13,7 +13,7 @@ class Fish {
   Fish chase_target;
   Fish flee_target;
   int boost_frames;
-  int boost_cooldown_frames;
+  float boost_cooldown_frames;
   int boost_duration_frames;
   int boost_recharge_frames;
 
@@ -33,9 +33,9 @@ class Fish {
     chase_target = null;
     flee_target = null;
     boost_frames = 0;
-    boost_cooldown_frames = 0;
     boost_duration_frames = 30;
     boost_recharge_frames = 150;
+    boost_cooldown_frames = boost_recharge_frames;
   }
 
   PVector turn(PVector or, float angle) {
@@ -97,15 +97,11 @@ class Fish {
   }
 
   public void move(float x, float y, int t, float acc) {
-
-
     if (prin) {
       dir.x = pos.x;
       dir.y = pos.y;
 
       dir = new PVector(mouseX, mouseY);
-
-
       dir.sub(pos);
 
       float n = dir.mag();
@@ -118,7 +114,7 @@ class Fish {
     }
     else {
       updateBoost();
-      float speed = acc;
+      float speed = acc*tam*fish_top_speed_size_factor;
       if (boost_frames > 0) {
         speed *= 2;
       }
@@ -177,7 +173,10 @@ class Fish {
       boost_frames--;
     }
     else if (boost_cooldown_frames > 0) {
-      boost_cooldown_frames--;
+      boost_cooldown_frames -= fish_boost_regeneration_size_factor/tam;
+      if (boost_cooldown_frames < 0) {
+        boost_cooldown_frames = 0;
+      }
     }
   }
 }

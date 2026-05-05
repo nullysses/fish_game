@@ -70,6 +70,9 @@ class Rest {
           moveWithAvoidance(fish, fish.flee_target, 2);
         }
         else if (fish.chase_target != null) {
+          if (isMaxSizeFish(fish)) {
+            fish.tryBoost();
+          }
           moveWithAvoidance(fish, fish.chase_target, 1);
         }
         else {
@@ -116,6 +119,10 @@ class Rest {
   }
 
   void setChaseTarget(Fish fish, Fish target) {
+    if (isLockedOnPrincipalInSurvival(fish) && target != p) {
+      return;
+    }
+
     if (fish.chase_target != target) {
       fish.chase_target = target;
       if (target != null) {
@@ -218,6 +225,34 @@ class Rest {
     float eat_d = max(fish.tam, threat.tam)*2;
     float danger_d = eat_d+danger_retarget_frames*expected_chase_speed;
     return fish.pos.dist(threat.pos) < danger_d;
+  }
+
+  boolean isLockedOnPrincipalInSurvival(Fish fish) {
+    return fish.chase_target == p && fish.tam > p.tam && noPrincipalPreyAvailable();
+  }
+
+  boolean noPrincipalPreyAvailable() {
+    for (int i = 0; i < dots.size(); i++) {
+      Fish other = dots.get(i);
+
+      if (other.alive && other.tam < p.tam) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  boolean isMaxSizeFish(Fish fish) {
+    for (int i = 0; i < dots.size(); i++) {
+      Fish other = dots.get(i);
+
+      if (other.alive && other.tam > fish.tam) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   void moveWithAvoidance(Fish fish, Fish target, float acc) {

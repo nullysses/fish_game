@@ -1,4 +1,3 @@
-
 import processing.sound.*;
 
 Fish p;
@@ -7,12 +6,14 @@ int scount;
 ArrayList<Bubble> bubbles;
 int bubbleTimer;
 SoundEffects sounds;
+float fish_top_speed_size_factor = 0.2;
+float fish_boost_regeneration_size_factor = 10;
 
 void setup() {
   size(1280, 720);
   background(140, 180, 255);
   p = new Fish(true);
-  r = new Rest(p, 60);
+  r = new Rest(p, 90);
   bubbles = new ArrayList<Bubble>();
   bubbleTimer = 1 * 30;
   sounds = new SoundEffects(this);
@@ -23,55 +24,54 @@ void setup() {
 
 void draw() {
   background(140, 180, 255);
-  switch(r.gamestate) {
-    case 0:
+  switch (r.gamestate) {
+  case 0:
+    fill(250, 100, 100);
+    textSize(48);
+    textAlign(CENTER, CENTER);
+    text("Click here to start!", width/2, height/2);
+    textAlign(LEFT, BASELINE);
+    if (mousePressed) {
+      r.gamestate = 1;
+    }
+    break;
+  case 1:
+    drawBubbles();
+    p.draw();
+    p.move(0, 0, 0, 1);
+
+    r.draw();
+
+    if (!r.smallerav) {
       fill(250, 100, 100);
       textSize(48);
-      textAlign(CENTER, CENTER);
-      text("Click here to start!", width/2, height/2);
-      textAlign(LEFT, BASELINE);
-      if (mousePressed) {
-        r.gamestate = 1;
+      if (scount%30 < 15) {
+        text("Survive! "+int(scount/30), 290, 100);
       }
-      break;
-    case 1:
-      drawBubbles();
-      p.draw();
-      p.move(0, 0, 0, 1);
+      scount--;
 
-      r.draw();
+      if (scount <= 0) {
+        r.gamestate = 2;
+        r.dots = new ArrayList();
+      }
+    }
+    break;
+  case 2:
+    fill(250, 100, 100);
+    textSize(48);
+    textAlign(CENTER, CENTER);
+    if (r.dots.size() == 0) {
+      text("You won!", width/2, height/2);
+    }
+    else {
+      text("You lost :(", width/2, height/2);
+    }
+    textAlign(LEFT, BASELINE);
 
-      if (!r.smallerav) {
-        fill(250, 100, 100);
-        textSize(48);
-        if(scount%30 < 15){
-          text("Survive! "+int(scount/30), 290, 100);
-        }
-        scount--;
-      
-        if (scount <= 0) {
-         r.gamestate = 2;
-         r.dots = new ArrayList(); 
-        }
-        }
-        break;
-     case 2:
-      fill(250, 100, 100);
-      textSize(48);
-      textAlign(CENTER, CENTER);
-      if (r.dots.size() == 0) {
-        text("You won!", width/2, height/2);
-      }
-      else {
-        text("You lost :(", width/2, height/2);
-      }
-      textAlign(LEFT, BASELINE);
-
-      if (mousePressed) {
-        setup();
-      }
-      break;
-    
+    if (mousePressed) {
+      setup();
+    }
+    break;
   }
 }
 
@@ -104,7 +104,7 @@ void addBubbleGroup() {
 }
 
 void mouseClicked() {
-  if (r.gamestate == 0 || r.gamestate ==2) {
+  if (r.gamestate == 0 || r.gamestate == 2) {
     setup();
   }
 }
