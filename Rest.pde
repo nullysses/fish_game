@@ -1,5 +1,6 @@
 class Rest {
   ArrayList<Fish> dots;
+  ArrayList<Fish> training_pool;
   ArrayList<Integer> tams;
   Fish p;
   int gamestate;
@@ -10,10 +11,14 @@ class Rest {
   int danger_retarget_frames;
   float expected_chase_speed;
   float similar_size_avoidance_scale;
+  int training_generation;
+  int training_frame;
+  int training_population_size;
 
   Rest(Fish f, int ars) {
     p = f;
     dots = new ArrayList();
+    training_pool = new ArrayList();
     gamestate = 0;
     smallerav = true;
     max_cohere_angle = (PI/120);
@@ -21,9 +26,14 @@ class Rest {
     danger_retarget_frames = 60;
     expected_chase_speed = 1;
     similar_size_avoidance_scale = 4;
+    training_generation = 1;
+    training_frame = 0;
+    training_population_size = ars;
 
     for (int i = 0; i < ars; i++) {
-      dots.add( new Fish(false));
+      Fish fish = new Fish(false);
+      dots.add(fish);
+      training_pool.add(fish);
     }
   }
 
@@ -37,6 +47,9 @@ class Rest {
       if (!fish.alive) {
         continue;
       }
+      if (fish_training_mode) {
+        fish.survival_frames++;
+      }
 
       if (p.pos.dist(fish.pos) < p.tam*2) {
         if (p.tam > fish.tam) {
@@ -44,7 +57,9 @@ class Rest {
           p.vr++;
         }
         else {
-          gamestate = 2;
+          if (!fish_training_mode) {
+            gamestate = 2;
+          }
         }
       }
       else {
@@ -53,7 +68,7 @@ class Rest {
 
           if (fish != other && other.alive && fish.pos.dist(other.pos) < fish.tam*2) {
             if (fish.tam > other.tam) {
-              fish.vr++;
+              fish.eatPrey();
               other.alive = false;
             }
           }
@@ -65,6 +80,7 @@ class Rest {
 
         updateTargets(fish);
         fish.draw();
+        drawBoostPolicyDebug(fish);
 
         if (fish.flee_target != null && isImmediateThreat(fish, fish.flee_target)) {
           moveWithAvoidance(fish, fish.flee_target, 2);
@@ -86,9 +102,11 @@ class Rest {
     smallerav = false;
     for (int j = dots.size()-1; j >= 0; j--) {
       if (!dots.get(j).alive) {
-        dots.remove(j);
-        if (dots.size() == 0) {
-          gamestate = 2;
+        if (!fish_training_mode) {
+          dots.remove(j);
+          if (dots.size() == 0) {
+            gamestate = 2;
+          }
         }
       }
       else {
@@ -304,5 +322,142 @@ class Rest {
     }
 
     return avoidance;
+  }
+
+  void startTraining() {
+    gamestate = 1;
+    training_generation = 1;
+    training_frame = 0;
+    training_population_size = dots.size();
+    training_pool = new ArrayList();
+
+    for (int i = 0; i < dots.size(); i++) {
+      training_pool.add(dots.get(i));
+    }
+  }
+
+  void advanceTraining() {
+    training_frame++;
+    if (training_frame >= fish_training_generation_frames) {
+      nextTrainingGeneration();
+    }
+  }
+
+  void nextTrainingGeneration() {
+    ArrayList<Fish> ranked = rankedTrainingPool();
+    int top_count = min(fish_training_top_k, ranked.size());
+
+    if (top_count == 0) {
+      resetTrainingGeneration(null);
+      return;
+    }
+
+    ArrayList<Fish> next = new ArrayList();
+    for (int i = 0; i < training_population_size; i++) {
+      Fish parent = ranked.get(i%top_count);
+      Fish child = new Fish(false);
+      child.copyBoostPolicyGenomeFrom(parent);
+      child.mutateBoostPolicyGenome();
+      next.add(child);
+    }
+
+    resetTrainingGeneration(next);
+  }
+
+  ArrayList<Fish> rankedTrainingPool() {
+    ArrayList<Fish> ranked = new ArrayList();
+    for (int i = 0; i < training_pool.size(); i++) {
+      Fish fish = training_pool.get(i);
+      fish.updateFitness();
+      ranked.add(fish);
+    }
+
+    for (int i = 0; i < ranked.size()-1; i++) {
+      int best = i;
+      for (int j = i+1; j < ranked.size(); j++) {
+        if (ranked.get(j).fitness > ranked.get(best).fitness) {
+          best = j;
+        }
+      }
+
+      Fish temp = ranked.get(i);
+      ranked.set(i, ranked.get(best));
+      ranked.set(best, temp);
+    }
+
+    return ranked;
+  }
+
+  void resetTrainingGeneration(ArrayList<Fish> next) {
+    dots = new ArrayList();
+    training_pool = new ArrayList();
+
+    if (next == null) {
+      next = new ArrayList();
+    }
+
+    if (next != null) {
+      for (int i = 0; i < next.size(); i++) {
+        Fish fish = next.get(i);
+        dots.add(fish);
+        training_pool.add(fish);
+      }
+    }
+
+    while (dots.size() < training_population_size) {
+      Fish fish = new Fish(false);
+      dots.add(fish);
+      training_pool.add(fish);
+    }
+
+    resetPrincipalForTraining();
+    training_generation++;
+    training_frame = 0;
+  }
+
+  void resetPrincipalForTraining() {
+    p.vr = 0;
+    p.pos = new PVector(width/2, height/2);
+    p.tam = 8;
+    p.alive = true;
+    p.chase_target = null;
+    p.flee_target = null;
+    p.dir = new PVector(1, 0);
+  }
+
+  void drawTrainingOverlay() {
+    pushStyle();
+    fill(255);
+    textSize(16);
+    textAlign(LEFT, TOP);
+    text("Training gen "+training_generation+" frame "+training_frame+"/"+fish_training_generation_frames, 20, 20);
+
+    ArrayList<Fish> ranked = rankedTrainingPool();
+    if (ranked.size() > 0) {
+      Fish best = ranked.get(0);
+      text("Best fitness "+nf(best.fitness, 1, 2)+" size "+best.tam+" prey "+best.prey_eaten+" boosts "+best.boost_uses, 20, 42);
+    }
+    popStyle();
+  }
+
+  void drawBoostPolicyDebug(Fish fish) {
+    if (!fish_boost_policy_debug) {
+      return;
+    }
+
+    if (fish.boost_frames == 0) {
+      fish.evaluateBoostPolicy();
+    }
+
+    pushStyle();
+    textSize(10);
+    textAlign(CENTER, CENTER);
+    fill(fish.boost_frames > 0 ? color(70, 210, 255) : fish.last_boost_policy_decision ? color(40, 220, 90) : color(255, 255, 255));
+    text(nf(fish.last_boost_policy_output, 1, 2), fish.pos.x, fish.pos.y-fish.tam*2.3);
+
+    noFill();
+    stroke(fish.last_boost_policy_available ? color(40, 220, 90, 180) : color(255, 220, 80, 140));
+    ellipse(fish.pos.x, fish.pos.y, fish.tam*4.2, fish.tam*2.2);
+    popStyle();
   }
 }

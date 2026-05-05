@@ -16,12 +16,26 @@ class Fish {
   float boost_cooldown_frames;
   int boost_duration_frames;
   int boost_recharge_frames;
+  float[] boost_policy_genome;
+  float[] last_boost_policy_inputs;
+  float last_boost_policy_output;
+  boolean last_boost_policy_decision;
+  boolean last_boost_policy_available;
+  int last_turn_sign;
+  int nodding_flips;
+  int nodding_frames;
+  int initial_tam;
+  int prey_eaten;
+  int boost_uses;
+  int survival_frames;
+  float fitness;
 
   Fish(boolean p) {
     vr = 0;
     prin = p;
     pos = prin?new PVector(width/2, height/2):new PVector(random(width), random(height));
     tam = prin?8:int(random(5, 12));
+    initial_tam = tam;
     float s = random(0, TWO_PI);
     dir = new PVector(cos(s), sin(s));
     t1 = new PVector(-1, 1);
@@ -36,6 +50,19 @@ class Fish {
     boost_duration_frames = 30;
     boost_recharge_frames = 150;
     boost_cooldown_frames = boost_recharge_frames;
+    boost_policy_genome = new float[9];
+    last_boost_policy_inputs = new float[8];
+    randomizeBoostPolicyGenome();
+    last_boost_policy_output = 0;
+    last_boost_policy_decision = false;
+    last_boost_policy_available = false;
+    last_turn_sign = 0;
+    nodding_flips = 0;
+    nodding_frames = 0;
+    prey_eaten = 0;
+    boost_uses = 0;
+    survival_frames = 0;
+    fitness = 0;
   }
 
   PVector turn(PVector or, float angle) {
@@ -50,9 +77,10 @@ class Fish {
       tam = tam + 4;
       vr = 0;
     }
-    int body = prin ? color(255, 135, 105) : color(105, 220, 135);
-    int belly = prin ? color(255, 205, 175) : color(190, 255, 185);
-    int fin = prin ? color(230, 90, 80) : color(65, 175, 105);
+    boolean nodding = !prin && nodding_frames > 0;
+    int body = prin ? color(255, 135, 105) : nodding ? color(245, 220, 60) : color(105, 220, 135);
+    int belly = prin ? color(255, 205, 175) : nodding ? color(255, 245, 150) : color(190, 255, 185);
+    int fin = prin ? color(230, 90, 80) : nodding ? color(205, 175, 30) : color(65, 175, 105);
     float flap = sin(frameCount * 0.24 + finPhase);
     float tailFlap = flap * tam * 0.38;
     float topFinFlap = flap * tam * 0.28;
@@ -118,6 +146,9 @@ class Fish {
       if (boost_frames > 0) {
         speed *= 2;
       }
+      if (nodding_frames > 0) {
+        speed *= 1.5;
+      }
 
       PVector target = new PVector(x, y);
       PVector desired;
@@ -139,6 +170,7 @@ class Fish {
         desired.normalize();
 
         float turn_angle = atan2(dir.x*desired.y-dir.y*desired.x, dir.x*desired.x+dir.y*desired.y);
+        updateNodding(turn_angle);
         if (abs(turn_angle) > PI/90) {
           float max_turn = min(PI/8, PI/36*speed);
           turn_angle = constrain(turn_angle, -max_turn, max_turn);
@@ -161,10 +193,35 @@ class Fish {
     }
   }
 
+  void updateNodding(float turn_angle) {
+    int turn_sign = turn_angle > 0 ? 1 : turn_angle < 0 ? -1 : 0;
+    boolean small_correction = abs(turn_angle) < PI/4;
+
+    if (turn_sign != 0 && last_turn_sign != 0 && turn_sign != last_turn_sign && small_correction) {
+      nodding_flips++;
+    }
+    else if (!small_correction || turn_sign == last_turn_sign) {
+      nodding_flips = max(0, nodding_flips-1);
+    }
+
+    if (turn_sign != 0) {
+      last_turn_sign = turn_sign;
+    }
+
+    if (nodding_flips >= 4) {
+      nodding_frames = 20;
+      nodding_flips = 2;
+    }
+    else if (nodding_frames > 0) {
+      nodding_frames--;
+    }
+  }
+
   void tryBoost() {
-    if (!prin && boost_frames == 0 && boost_cooldown_frames == 0) {
+    if (!prin && boost_frames == 0 && boost_cooldown_frames == 0 && shouldUseBoost()) {
       boost_frames = boost_duration_frames;
       boost_cooldown_frames = boost_recharge_frames;
+      boost_uses++;
     }
   }
 
@@ -178,5 +235,78 @@ class Fish {
         boost_cooldown_frames = 0;
       }
     }
+  }
+
+  boolean shouldUseBoost() {
+    evaluateBoostPolicy();
+    return last_boost_policy_decision;
+  }
+
+  void evaluateBoostPolicy() {
+    last_boost_policy_available = boost_frames == 0 && boost_cooldown_frames == 0;
+    updateBoostPolicyInputs();
+
+    float z = boost_policy_genome[8];
+    for (int i = 0; i < last_boost_policy_inputs.length; i++) {
+      z += last_boost_policy_inputs[i]*boost_policy_genome[i];
+    }
+
+    last_boost_policy_output = 1/(1+exp(-z));
+    last_boost_policy_decision = last_boost_policy_available && last_boost_policy_output > fish_boost_policy_threshold;
+  }
+
+  void updateBoostPolicyInputs() {
+    // Inputs: prey dx/dy, predator dx/dy, self size, prey size ratio, predator size ratio, cooldown ratio.
+    setTargetInputs(chase_target, 0);
+    setTargetInputs(flee_target, 2);
+
+    last_boost_policy_inputs[4] = constrain(tam/20.0, 0, 1);
+    last_boost_policy_inputs[5] = chase_target == null ? 0 : constrain(chase_target.tam/(float)tam, 0, 3);
+    last_boost_policy_inputs[6] = flee_target == null ? 0 : constrain(flee_target.tam/(float)tam, 0, 3);
+    last_boost_policy_inputs[7] = constrain(boost_cooldown_frames/(float)boost_recharge_frames, 0, 1);
+  }
+
+  void setTargetInputs(Fish target, int index) {
+    if (target == null || !target.alive) {
+      last_boost_policy_inputs[index] = 0;
+      last_boost_policy_inputs[index+1] = 0;
+      return;
+    }
+
+    float norm = max(width, height);
+    last_boost_policy_inputs[index] = constrain((target.pos.x-pos.x)/norm, -1, 1);
+    last_boost_policy_inputs[index+1] = constrain((target.pos.y-pos.y)/norm, -1, 1);
+  }
+
+  void randomizeBoostPolicyGenome() {
+    for (int i = 0; i < boost_policy_genome.length; i++) {
+      boost_policy_genome[i] = random(-0.5, 0.5);
+    }
+  }
+
+  void mutateBoostPolicyGenome() {
+    for (int i = 0; i < boost_policy_genome.length; i++) {
+      if (random(1) < fish_boost_policy_mutation_rate) {
+        boost_policy_genome[i] += random(-fish_boost_policy_mutation_amount, fish_boost_policy_mutation_amount);
+      }
+    }
+  }
+
+  void eatPrey() {
+    vr++;
+    prey_eaten++;
+  }
+
+  void copyBoostPolicyGenomeFrom(Fish parent) {
+    for (int i = 0; i < boost_policy_genome.length; i++) {
+      boost_policy_genome[i] = parent.boost_policy_genome[i];
+    }
+  }
+
+  void updateFitness() {
+    fitness = survival_frames*fish_training_survival_weight;
+    fitness += max(0, tam-initial_tam)*fish_training_growth_weight;
+    fitness += prey_eaten*fish_training_prey_weight;
+    fitness -= boost_uses*fish_training_boost_penalty;
   }
 }
