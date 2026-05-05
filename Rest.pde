@@ -38,6 +38,10 @@ class Rest {
   }
 
   public void draw() {
+    draw(true);
+  }
+
+  public void draw(boolean render) {
     strokeWeight(5);
     stroke(250, 250, 100);
 
@@ -51,7 +55,7 @@ class Rest {
         fish.survival_frames++;
       }
 
-      if (p.pos.dist(fish.pos) < p.tam*2) {
+      if (hasPrincipal() && p.pos.dist(fish.pos) < p.tam*2) {
         if (p.tam > fish.tam) {
           fish.alive = false;
           p.vr++;
@@ -79,8 +83,10 @@ class Rest {
         }
 
         updateTargets(fish);
-        fish.draw();
-        drawBoostPolicyDebug(fish);
+        if (render) {
+          fish.draw();
+          drawBoostPolicyDebug(fish);
+        }
 
         if (fish.flee_target != null && isImmediateThreat(fish, fish.flee_target)) {
           moveWithAvoidance(fish, fish.flee_target, 2);
@@ -110,7 +116,7 @@ class Rest {
         }
       }
       else {
-        if (dots.get(j).tam < p.tam) {
+        if (hasPrincipal() && dots.get(j).tam < p.tam) {
           smallerav = true;
         }
       }
@@ -162,7 +168,7 @@ class Rest {
     Fish target = null;
     float target_d = 0;
 
-    if (larger && p.tam > fish.tam) {
+    if (larger && hasPrincipal() && p.tam > fish.tam) {
       target = p;
       target_d = fish.pos.dist(p.pos);
     }
@@ -190,7 +196,7 @@ class Rest {
     Fish target = null;
     float target_d = 0;
 
-    if (p.tam > fish.tam && isImmediateThreat(fish, p)) {
+    if (hasPrincipal() && p.tam > fish.tam && isImmediateThreat(fish, p)) {
       target = p;
       target_d = fish.pos.dist(p.pos);
     }
@@ -217,7 +223,7 @@ class Rest {
     float target_d = 0;
     float sight_d = fish.tam*fish_neighborhood_scale;
 
-    if (p.tam < fish.tam && fish.pos.dist(p.pos) < sight_d) {
+    if (hasPrincipal() && p.tam < fish.tam && fish.pos.dist(p.pos) < sight_d) {
       target = p;
       target_d = fish.pos.dist(p.pos);
     }
@@ -246,10 +252,14 @@ class Rest {
   }
 
   boolean isLockedOnPrincipalInSurvival(Fish fish) {
-    return fish.chase_target == p && fish.tam > p.tam && noPrincipalPreyAvailable();
+    return hasPrincipal() && fish.chase_target == p && fish.tam > p.tam && noPrincipalPreyAvailable();
   }
 
   boolean noPrincipalPreyAvailable() {
+    if (!hasPrincipal()) {
+      return false;
+    }
+
     for (int i = 0; i < dots.size(); i++) {
       Fish other = dots.get(i);
 
@@ -259,6 +269,10 @@ class Rest {
     }
 
     return true;
+  }
+
+  boolean hasPrincipal() {
+    return !fish_training_mode && p != null;
   }
 
   boolean isMaxSizeFish(Fish fish) {
@@ -361,6 +375,7 @@ class Rest {
       next.add(child);
     }
 
+    saveTrainingGeneration(next, ranked);
     resetTrainingGeneration(next);
   }
 
@@ -410,19 +425,9 @@ class Rest {
       training_pool.add(fish);
     }
 
-    resetPrincipalForTraining();
+    p = null;
     training_generation++;
     training_frame = 0;
-  }
-
-  void resetPrincipalForTraining() {
-    p.vr = 0;
-    p.pos = new PVector(width/2, height/2);
-    p.tam = 8;
-    p.alive = true;
-    p.chase_target = null;
-    p.flee_target = null;
-    p.dir = new PVector(1, 0);
   }
 
   void drawTrainingOverlay() {
@@ -438,6 +443,65 @@ class Rest {
       text("Best fitness "+nf(best.fitness, 1, 2)+" size "+best.tam+" prey "+best.prey_eaten+" boosts "+best.boost_uses, 20, 42);
     }
     popStyle();
+  }
+
+  void saveTrainingGeneration(ArrayList<Fish> generation, ArrayList<Fish> ranked) {
+    File dir = new File(sketchPath(fish_training_save_dir));
+    dir.mkdirs();
+
+    String[] lines = new String[generation.size()+2];
+    lines[0] = "# generation,"+training_generation;
+    lines[1] = "# best_fitness,"+(ranked.size() > 0 ? ranked.get(0).fitness : 0);
+    for (int i = 0; i < generation.size(); i++) {
+      lines[i+2] = generation.get(i).boostPolicyGenomeCsv();
+    }
+
+    saveStrings(fish_training_save_dir+"/generation_"+nf(training_generation, 4)+".csv", lines);
+  }
+
+  void loadLatestTrainingGeneration() {
+    File dir = new File(sketchPath(fish_training_save_dir));
+    if (!dir.exists()) {
+      return;
+    }
+
+    File[] files = dir.listFiles();
+    if (files == null) {
+      return;
+    }
+
+    String latest = null;
+    for (int i = 0; i < files.length; i++) {
+      String name = files[i].getName();
+      if (name.startsWith("generation_") && name.endsWith(".csv") && (latest == null || name.compareTo(latest) > 0)) {
+        latest = name;
+      }
+    }
+
+    if (latest == null) {
+      return;
+    }
+
+    String[] lines = loadStrings(fish_training_save_dir+"/"+latest);
+    if (lines == null) {
+      return;
+    }
+
+    ArrayList<String> genomes = new ArrayList();
+    for (int i = 0; i < lines.length; i++) {
+      String line = trim(lines[i]);
+      if (line.length() > 0 && !line.startsWith("#")) {
+        genomes.add(line);
+      }
+    }
+
+    if (genomes.size() == 0) {
+      return;
+    }
+
+    for (int i = 0; i < dots.size(); i++) {
+      dots.get(i).loadBoostPolicyGenomeCsv(genomes.get(i%genomes.size()));
+    }
   }
 
   void drawBoostPolicyDebug(Fish fish) {

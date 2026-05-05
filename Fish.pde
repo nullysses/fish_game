@@ -24,6 +24,7 @@ class Fish {
   int last_turn_sign;
   int nodding_flips;
   int nodding_frames;
+  ArrayList<TailRipple> tail_ripples;
   int initial_tam;
   int prey_eaten;
   int boost_uses;
@@ -59,6 +60,7 @@ class Fish {
     last_turn_sign = 0;
     nodding_flips = 0;
     nodding_frames = 0;
+    tail_ripples = new ArrayList();
     prey_eaten = 0;
     boost_uses = 0;
     survival_frames = 0;
@@ -77,10 +79,11 @@ class Fish {
       tam = tam + 4;
       vr = 0;
     }
-    boolean nodding = !prin && nodding_frames > 0;
-    int body = prin ? color(255, 135, 105) : nodding ? color(245, 220, 60) : color(105, 220, 135);
-    int belly = prin ? color(255, 205, 175) : nodding ? color(255, 245, 150) : color(190, 255, 185);
-    int fin = prin ? color(230, 90, 80) : nodding ? color(205, 175, 30) : color(65, 175, 105);
+    updateTailRipples();
+
+    int body = prin ? color(255, 135, 105) : color(105, 220, 135);
+    int belly = prin ? color(255, 205, 175) : color(190, 255, 185);
+    int fin = prin ? color(230, 90, 80) : color(65, 175, 105);
     float flap = sin(frameCount * 0.24 + finPhase);
     float tailFlap = flap * tam * 0.38;
     float topFinFlap = flap * tam * 0.28;
@@ -122,6 +125,8 @@ class Fish {
     ellipse(tam*1.08, -tam*0.28, tam*0.18, tam*0.18);
 
     popMatrix();
+
+    drawTailRipples();
   }
 
   public void move(float x, float y, int t, float acc) {
@@ -217,6 +222,27 @@ class Fish {
     }
   }
 
+  void updateTailRipples() {
+    if (!prin && (nodding_frames > 0 || boost_frames > 0) && frameCount%3 == 0) {
+      PVector tail = PVector.sub(pos, PVector.mult(dir, tam*1.8));
+      tail_ripples.add(new TailRipple(tail.x, tail.y, tam));
+    }
+
+    for (int i = tail_ripples.size()-1; i >= 0; i--) {
+      TailRipple ripple = tail_ripples.get(i);
+      ripple.update();
+      if (ripple.done()) {
+        tail_ripples.remove(i);
+      }
+    }
+  }
+
+  void drawTailRipples() {
+    for (int i = 0; i < tail_ripples.size(); i++) {
+      tail_ripples.get(i).draw();
+    }
+  }
+
   void tryBoost() {
     if (!prin && boost_frames == 0 && boost_cooldown_frames == 0 && shouldUseBoost()) {
       boost_frames = boost_duration_frames;
@@ -300,6 +326,24 @@ class Fish {
   void copyBoostPolicyGenomeFrom(Fish parent) {
     for (int i = 0; i < boost_policy_genome.length; i++) {
       boost_policy_genome[i] = parent.boost_policy_genome[i];
+    }
+  }
+
+  String boostPolicyGenomeCsv() {
+    String genome = "";
+    for (int i = 0; i < boost_policy_genome.length; i++) {
+      if (i > 0) {
+        genome += ",";
+      }
+      genome += boost_policy_genome[i];
+    }
+    return genome;
+  }
+
+  void loadBoostPolicyGenomeCsv(String genome) {
+    String[] weights = split(trim(genome), ',');
+    for (int i = 0; i < min(weights.length, boost_policy_genome.length); i++) {
+      boost_policy_genome[i] = float(weights[i]);
     }
   }
 

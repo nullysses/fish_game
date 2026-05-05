@@ -14,8 +14,7 @@ float fish_boost_policy_threshold = 0.5;
 float fish_boost_policy_mutation_rate = 0.08;
 float fish_boost_policy_mutation_amount = 0.25;
 boolean fish_boost_policy_debug = false;
-boolean fish_training_mode = false;
-boolean fish_training_render_frame = true;
+boolean fish_training_mode = true;
 String fish_training_save_dir = "training";
 int fish_training_generation_frames = 30 * 30;
 int fish_training_top_k = 12;
@@ -39,12 +38,12 @@ void setup() {
 }
 
 void draw() {
+  background(140, 180, 255);
+
   if (fish_training_mode) {
     drawTraining();
     return;
   }
-
-  background(140, 180, 255);
 
   switch (r.gamestate) {
   case 0:
@@ -140,7 +139,6 @@ void keyPressed() {
     if (fish_training_mode) {
       p = null;
       r = new Rest(null, fish_population_size);
-      fish_training_render_frame = true;
       r.startTraining();
     }
     else {
@@ -150,21 +148,8 @@ void keyPressed() {
 }
 
 void drawTraining() {
-  if (fish_training_render_frame) {
-    background(140, 180, 255);
-    drawBubbles();
-    r.draw(true);
-    r.advanceTraining();
-    r.draw(false);
-    r.advanceTraining();
-    r.drawTrainingOverlay();
-  }
-  else {
-    r.draw(false);
-    r.advanceTraining();
-    r.draw(false);
-    r.advanceTraining();
-  }
-
-  fish_training_render_frame = !fish_training_render_frame;
+  drawBubbles();
+  r.draw();
+  r.drawTrainingOverlay();
+  r.advanceTraining();
 }
