@@ -10,6 +10,12 @@ class Fish {
   boolean alive;
   PVector href;
   float finPhase;
+  Fish chase_target;
+  Fish flee_target;
+  int boost_frames;
+  int boost_cooldown_frames;
+  int boost_duration_frames;
+  int boost_recharge_frames;
 
   Fish(boolean p) {
     vr = 0;
@@ -24,6 +30,12 @@ class Fish {
     href = new PVector(1, 0);
     alive = true;
     finPhase = random(TWO_PI);
+    chase_target = null;
+    flee_target = null;
+    boost_frames = 0;
+    boost_cooldown_frames = 0;
+    boost_duration_frames = 30;
+    boost_recharge_frames = 150;
   }
 
   PVector turn(PVector or, float angle) {
@@ -84,7 +96,7 @@ class Fish {
     popMatrix();
   }
 
-  public void move(float x, float y, int t, float acc) { 
+  public void move(float x, float y, int t, float acc) {
 
 
     if (prin) {
@@ -105,18 +117,41 @@ class Fish {
       dir.normalize();
     }
     else {
+      updateBoost();
+      float speed = acc;
+      if (boost_frames > 0) {
+        speed *= 2;
+      }
+
+      PVector target = new PVector(x, y);
+      PVector desired;
+
       if (t <= tam) {
-        dir = new PVector(x, y);
+        desired = target.sub(pos);
       }
       else {
-        dir = new PVector(2*pos.x-x, 2*pos.y-y);
+        desired = PVector.sub(pos, target);
       }
 
-      dir.sub(pos);
+      if (desired.mag() > 0) {
+        desired.normalize();
+        desired.mult(0.35);
 
-      dir.normalize();
+        PVector forward = dir.copy();
+        forward.mult(0.65);
+        desired.add(forward);
+        desired.normalize();
 
-      dir.mult((acc));
+        float turn_angle = atan2(dir.x*desired.y-dir.y*desired.x, dir.x*desired.x+dir.y*desired.y);
+        if (abs(turn_angle) > PI/90) {
+          float max_turn = min(PI/8, PI/36*speed);
+          turn_angle = constrain(turn_angle, -max_turn, max_turn);
+          float new_heading = dir.heading()+turn_angle;
+          dir = new PVector(cos(new_heading), sin(new_heading));
+        }
+      }
+
+      dir.mult(speed);
       pos.x = (pos.x+dir.x)%width;
       if (pos.x <= 0) {
         pos.x = width-tam*2;
@@ -127,6 +162,22 @@ class Fish {
       }
 
       dir.normalize();
+    }
+  }
+
+  void tryBoost() {
+    if (!prin && boost_frames == 0 && boost_cooldown_frames == 0) {
+      boost_frames = boost_duration_frames;
+      boost_cooldown_frames = boost_recharge_frames;
+    }
+  }
+
+  void updateBoost() {
+    if (boost_frames > 0) {
+      boost_frames--;
+    }
+    else if (boost_cooldown_frames > 0) {
+      boost_cooldown_frames--;
     }
   }
 }
